@@ -27,7 +27,19 @@ $manifestPath = Join-Path $here 'CockpitAnchor.json'
   }
 } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestPath -Encoding ascii
 
-# Register in HKLM implicit layers (OpenComposite's bundled OpenXR loader does not read HKCU).
+# Remove ANY previous Cockpit Anchor registration first (from older versions / other folders),
+# so installing cleanly REPLACES the old one instead of stacking a duplicate.
+$old = 0
+foreach ($hive in 'HKLM','HKCU') {
+  $k = "${hive}:\SOFTWARE\Khronos\OpenXR\1\ApiLayers\Implicit"
+  if (Test-Path $k) {
+    foreach ($name in (Get-Item $k).Property) {
+      if ($name -like '*CockpitAnchor*') { Remove-ItemProperty -Path $k -Name $name -ErrorAction SilentlyContinue; $old++ }
+    }
+  }
+}
+
+# Register THIS version in HKLM implicit layers (OpenComposite's bundled OpenXR loader does not read HKCU).
 $klm = 'HKLM:\SOFTWARE\Khronos\OpenXR\1\ApiLayers\Implicit'
 try {
   New-Item -Path $klm -Force | Out-Null
@@ -35,6 +47,7 @@ try {
 } catch {
   throw "Could not write HKLM (run this as administrator). $($_.Exception.Message)"
 }
+if ($old -gt 0) { "Replaced $old previous Cockpit Anchor registration(s)." }
 
 "Installed Cockpit Anchor:"
 "  DLL:      $dll"

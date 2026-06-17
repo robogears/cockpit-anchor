@@ -135,6 +135,10 @@ Most days you'll never touch these. The seat just stays put.
 | Black screen when the game launches | Double-check **"Center to play space (Stage tracking)" is OFF** in Virtual Desktop (Part 3). |
 | Doesn't seem to do anything | Open the log at `%LOCALAPPDATA%\CockpitAnchor\cockpit-anchor.log` — it should say the layer loaded for Assetto Corsa. |
 
+## Updating
+
+Download the newer zip, extract it, and double-click **`Install.bat`** — it cleanly replaces the old version (no leftover duplicates). **Your saved seat is kept** — it's stored separately, not in the install folder — so you don't recalibrate. You can delete the old extracted folder afterward.
+
 ## Uninstall
 
 Double-click **`Uninstall.bat`** in the same folder and click **Yes**. That removes Cockpit Anchor completely — your Assetto Corsa and Virtual Desktop settings are untouched.
