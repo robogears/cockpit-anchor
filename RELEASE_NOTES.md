@@ -1,25 +1,24 @@
-# What's new in v0.1.1
+# What's new in v0.1.2
 
-## Persistent VR cockpit anchoring
-- First public release. Assetto Corsa's VR cockpit now loads in the **same physical seat every session** — no manual recenter.
-- **One-time calibration**: sit in your driving position, press `Ctrl+Shift+S`. The seat is anchored to your room (OpenXR `STAGE`) and persists across launches and reboots.
-- Recenter becomes a no-op while anchored; press `Ctrl+Shift+B` to free it up and reposition, then `Ctrl+Shift+S` to re-lock.
-- Audible beeps confirm save / bypass through your headset audio.
+First public release of **Cockpit Anchor** — your Assetto Corsa VR cockpit loads in the same physical seat every time, with no manual recentering.
 
-## Safety & install
-- The layer activates **only for Assetto Corsa** and stays completely inert in every other OpenXR app on your machine.
-- **Relocatable installer**: run `install.ps1` (as admin) from any folder; it registers the layer and generates its manifest automatically.
+## Highlights
+- **Set-and-forget seat anchor** — calibrate once with `Ctrl+Shift+S`, and the cockpit loads in the exact same real-world spot every session, across launches and reboots.
+- **One-click install** — download the zip, extract, double-click `Install.bat`. No command line, no typing paths.
+- **Update-safe** — installing a newer version cleanly replaces the old one, and your saved seat is kept.
+- **Only touches Assetto Corsa** — the layer stays completely inert in every other OpenXR app on your PC.
+
+> ⚠️ **Beta, and built by AI** — expect rough edges, back up your data, use at your own risk. See the README for details.
 
 ---
 
 # Install
 
-- **Windows (Quest + Virtual Desktop)**: download the **zip** below, extract it, then run `install.ps1` as administrator:
-  ```powershell
-  powershell -ExecutionPolicy Bypass -File install.ps1
-  ```
-  Then follow the one-time VR setup in the README / `docs/setup-guide.md`.
-- Config and the saved anchor live in `%LOCALAPPDATA%\CockpitAnchor\`.
+1. Download **`CockpitAnchor-v0.1.2.zip`** below and **extract** it.
+2. Double-click **`Install.bat`** and click **Yes** (it needs admin to register itself).
+3. Do the one-time VR setup in the [README](https://github.com/robogears/cockpit-anchor#readme), then get in a car and press **`Ctrl+Shift+S`** to calibrate.
+
+Your saved seat lives in `%LOCALAPPDATA%\CockpitAnchor\` (kept across updates).
 
 ## Requirements
 
@@ -30,4 +29,4 @@
 
 ---
 
-**Full Changelog**: https://github.com/robogears/cockpit-anchor/commits/v0.1.1
+**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.1.1...v0.1.2
