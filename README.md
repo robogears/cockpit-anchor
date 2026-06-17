@@ -1,4 +1,4 @@
-# Cockpit Anchor
+# Cockpit Anchor **(BETA)**
 
 Make Assetto Corsa's VR cockpit load in the **same physical seat every time** — no manual recenter, ever.
 
