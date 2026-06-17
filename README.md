@@ -84,15 +84,17 @@ Cockpit Anchor locks your seat to your **real room**, using your headset's bound
 
 ### Part 4 — Install Cockpit Anchor
 
-1. From the **[latest release](../../releases/latest)**, download these three files into a folder you won't delete (for example `C:\CockpitAnchor`):
-   `CockpitAnchorLayer.dll`, `install.ps1`, `uninstall.ps1`
-2. Run the installer **as administrator** (it needs admin to register itself):
-   - Click **Start**, type **PowerShell**, **right-click** "Windows PowerShell," and choose **Run as administrator**.
-   - In the blue window, type this and press Enter (change the folder if you used a different one):
-     ```
-     powershell -ExecutionPolicy Bypass -File C:\CockpitAnchor\install.ps1
-     ```
-   - It'll print "Installed Cockpit Anchor." That's it.
+1. On the **[latest release](../../releases/latest)** page, download the **zip** file and **extract it** somewhere you'll keep it.
+2. Open the extracted folder and **double-click `Install.bat`**. Click **Yes** when Windows asks for permission (it needs admin to register itself). When you see "Installed Cockpit Anchor," you're done.
+
+<details>
+<summary>Prefer to run it by hand instead of the .bat?</summary>
+
+Open **PowerShell as administrator** (Start → type *PowerShell* → right-click → *Run as administrator*). Type the line below — including the **space at the end** — then **drag `install.ps1` from the extracted folder into the window** (that pastes its full path), and press **Enter**:
+```
+powershell -ExecutionPolicy Bypass -File 
+```
+</details>
 
 ---
 
@@ -129,13 +131,13 @@ Most days you'll never touch these. The seat just stays put.
 | Problem | What to do |
 |---|---|
 | Cockpit is in the wrong place after I redrew my Quest boundary | Your room reference moved — just re-calibrate: get in a car, press `Ctrl+Shift+S`. |
-| I want to turn it off for a session | Press `Ctrl+Shift+B`, or remove it with `uninstall.ps1`. |
+| I want to turn it off for a session | Press `Ctrl+Shift+B`, or remove it with `Uninstall.bat`. |
 | Black screen when the game launches | Double-check **"Center to play space (Stage tracking)" is OFF** in Virtual Desktop (Part 3). |
 | Doesn't seem to do anything | Open the log at `%LOCALAPPDATA%\CockpitAnchor\cockpit-anchor.log` — it should say the layer loaded for Assetto Corsa. |
 
 ## Uninstall
 
-Run `uninstall.ps1` as administrator (same way you ran the installer). That removes Cockpit Anchor completely — your Assetto Corsa and Virtual Desktop settings are untouched.
+Double-click **`Uninstall.bat`** in the same folder and click **Yes**. That removes Cockpit Anchor completely — your Assetto Corsa and Virtual Desktop settings are untouched.
 
 ---
 
