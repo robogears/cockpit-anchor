@@ -75,15 +75,15 @@ Cockpit Anchor locks your seat to your **real room**, using your headset's bound
 
 ### Part 4 — Install Cockpit Anchor
 
-1. From the **[latest release](../../releases/latest)**, download these three files into a folder you won't delete (for example `C:\CockpitAnchor`):
-   `CockpitAnchorLayer.dll`, `install.ps1`, `uninstall.ps1`
-2. Run the installer **as administrator** (it needs admin to register itself):
+1. On the **[latest release](../../releases/latest)** page, download the **zip** (e.g. `CockpitAnchor-v0.1.1.zip`) and **extract it** somewhere you'll keep it. You'll get a folder containing the program, `install.ps1`, and `uninstall.ps1`.
+2. Install it **as administrator** (it needs admin to register itself):
    - Click **Start**, type **PowerShell**, **right-click** "Windows PowerShell," and choose **Run as administrator**.
-   - In the blue window, type this and press Enter (change the folder if you used a different one):
+   - In the blue window, type this — with the **space** at the end — but **don't press Enter yet**:
      ```
-     powershell -ExecutionPolicy Bypass -File C:\CockpitAnchor\install.ps1
+     powershell -ExecutionPolicy Bypass -File 
      ```
-   - It'll print "Installed Cockpit Anchor." That's it.
+   - Now **drag `install.ps1` from the extracted folder into the blue window** (this pastes its full path for you), then press **Enter**.
+   - It prints "Installed Cockpit Anchor." Done.
 
 ---
 

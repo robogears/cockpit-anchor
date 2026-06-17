@@ -24,14 +24,17 @@ jobs:
         run: |
           cl /nologo /LD /MT /EHsc /O2 /std:c++17 /DWIN32 /D_WINDOWS /I"deps\OpenXR-SDK\include" "api-layer\src\layer.cpp" /Fe:"CockpitAnchorLayer.dll"
 
-      - name: Stage release files
+      - name: Package release zip
         shell: pwsh
         run: |
+          $stage = "CockpitAnchor-${{ github.ref_name }}"
+          New-Item -ItemType Directory -Force $stage | Out-Null
+          Copy-Item CockpitAnchorLayer.dll  $stage\
+          Copy-Item api-layer\install.ps1   $stage\
+          Copy-Item api-layer\uninstall.ps1 $stage\
+          Copy-Item README.md               $stage\
           New-Item -ItemType Directory -Force dist | Out-Null
-          Copy-Item CockpitAnchorLayer.dll        dist\
-          Copy-Item api-layer\install.ps1         dist\
-          Copy-Item api-layer\uninstall.ps1       dist\
-          Copy-Item README.md                     dist\
+          Compress-Archive -Path $stage -DestinationPath "dist\CockpitAnchor-${{ github.ref_name }}.zip" -Force
 
       - name: Create draft release
         uses: softprops/action-gh-release@v2
@@ -40,7 +43,4 @@ jobs:
           name: ${{ github.ref_name }}
           body_path: RELEASE_NOTES.md
           fail_on_unmatched_files: true
-          files: |
-            dist/CockpitAnchorLayer.dll
-            dist/install.ps1
-            dist/uninstall.ps1
+          files: dist/CockpitAnchor-${{ github.ref_name }}.zip

@@ -14,7 +14,7 @@
 
 # Install
 
-- **Windows (Quest + Virtual Desktop)**: download `CockpitAnchorLayer.dll`, `install.ps1`, and `uninstall.ps1` into a folder, then run as administrator:
+- **Windows (Quest + Virtual Desktop)**: download the **zip** below, extract it, then run `install.ps1` as administrator:
   ```powershell
   powershell -ExecutionPolicy Bypass -File install.ps1
   ```
