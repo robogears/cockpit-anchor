@@ -1,0 +1,23 @@
+# Build output
+api-layer/build/
+*.obj
+*.lib
+*.exp
+*.dll
+*.pdb
+*.ilk
+
+# Generated at install time (install.ps1 writes this with a machine-local path)
+api-layer/CockpitAnchor.json
+
+# Third-party SDK headers (fetched, not vendored)
+deps/
+
+# Runtime data / logs
+config/seat-anchor.json
+**/seat-anchor.json
+*.log
+
+# Local reference material
+vdxrwiki/
+backups/

@@ -1,0 +1,46 @@
+name: build
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch OpenXR SDK headers
+        run: git clone --depth 1 https://github.com/KhronosGroup/OpenXR-SDK deps/OpenXR-SDK
+
+      - name: Set up MSVC (x64)
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build CockpitAnchorLayer.dll
+        shell: cmd
+        run: |
+          cl /nologo /LD /MT /EHsc /O2 /std:c++17 /DWIN32 /D_WINDOWS /I"deps\OpenXR-SDK\include" "api-layer\src\layer.cpp" /Fe:"CockpitAnchorLayer.dll"
+
+      - name: Stage release files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item CockpitAnchorLayer.dll        dist\
+          Copy-Item api-layer\install.ps1         dist\
+          Copy-Item api-layer\uninstall.ps1       dist\
+          Copy-Item README.md                     dist\
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: ${{ github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          fail_on_unmatched_files: true
+          files: |
+            dist/CockpitAnchorLayer.dll
+            dist/install.ps1
+            dist/uninstall.ps1
