@@ -135,6 +135,11 @@ static const unsigned BOUNCE_GAP_MS   = 1200;   // dwell in the VD environment b
 static std::atomic<int>                g_bounceArmGen{0};   // g_createCount snapshot at FOCUSED (0 = disarmed)
 static std::atomic<unsigned long long> g_bounceArmTick{0};  // GetTickCount64() at that FOCUSED
 static int                             g_lastBouncedGen = 0; // hotkey-thread only: last generation we bounced
+// The chord we send defaults to Shift+Win+D (VD's stock "Toggle VR Mode"), but can be overridden by
+// %LOCALAPPDATA%\CockpitAnchor\bounce-key.txt (decimal Windows VK codes, modifiers first then the main
+// key). The control-panel app writes that file when it detects a remapped "Toggle VR Mode" in Virtual
+// Desktop's BindingSettings.json, so the auto-bounce still works if the user changed the keybind.
+static std::vector<WORD>               g_bounceKeys = { VK_LSHIFT, VK_LWIN, 'D' };
 
 static XrPosef           g_anchor = IdentityPose();
 static bool              g_anchorValid = false;
@@ -190,18 +195,37 @@ static void BeepFailed()  { PlayTone(300, 280); }                      // low bu
 static void BeepEnabled() { PlayTone(880, 110); }                      // anchor on
 static void BeepBypass()  { PlayTone(440, 130); }                      // anchor off
 
-// Sends Virtual Desktop's "Toggle VR Mode" hotkey (Shift+Win+D) as one chord: flips between the VR game
-// and the Virtual Desktop environment. Two of these (out, then back) reproduce the manual bounce.
-static void SendToggleVrMode() {
-    INPUT in[6] = {};
-    const WORD vk[6] = { VK_LSHIFT, VK_LWIN, 'D', 'D',  VK_LWIN, VK_LSHIFT };
-    const bool up[6] = { false,     false,   false, true, true,   true      };
-    for (int i = 0; i < 6; ++i) {
-        in[i].type       = INPUT_KEYBOARD;
-        in[i].ki.wVk     = vk[i];
-        in[i].ki.dwFlags = up[i] ? KEYEVENTF_KEYUP : 0;
+// Reads a custom bounce chord from %LOCALAPPDATA%\CockpitAnchor\bounce-key.txt if present (the app writes
+// it when VD's "Toggle VR Mode" is remapped). Format: decimal VK codes, comma/space-separated, modifiers
+// first then the main key (e.g. "162,91,68"). Absent/invalid -> keep the Shift+Win+D default.
+static void LoadBounceKeys() {
+    std::ifstream f((DataDir() + L"\\bounce-key.txt").c_str());
+    if (!f) return;
+    std::string line; std::getline(f, line); line.push_back(',');
+    std::vector<WORD> ks; std::string cur;
+    for (char ch : line) {
+        if (ch >= '0' && ch <= '9') cur += ch;
+        else if (!cur.empty()) { int v = std::atoi(cur.c_str()); if (v > 0 && v < 256) ks.push_back((WORD)v); cur.clear(); }
     }
-    SendInput(6, in, sizeof(INPUT));
+    if (ks.size() >= 2 && ks.size() <= 6) {
+        g_bounceKeys = ks;
+        Log("[bounce] using custom VD Toggle-VR-Mode chord from bounce-key.txt (%d keys)", (int)ks.size());
+    }
+}
+
+// Sends VD's "Toggle VR Mode" hotkey as one chord (g_bounceKeys; default Shift+Win+D, or the user's
+// remapped combo): flips between the VR game and the VD environment. Two of these reproduce the bounce.
+static void SendToggleVrMode() {
+    const std::vector<WORD>& k = g_bounceKeys;
+    const int n = (int)k.size();
+    std::vector<INPUT> in(n * 2);
+    for (int i = 0; i < n; ++i) {                       // press, in order (modifiers first)
+        in[i] = INPUT{}; in[i].type = INPUT_KEYBOARD; in[i].ki.wVk = k[i];
+    }
+    for (int i = 0; i < n; ++i) {                       // release, in reverse
+        INPUT& u = in[n + i]; u = INPUT{}; u.type = INPUT_KEYBOARD; u.ki.wVk = k[n - 1 - i]; u.ki.dwFlags = KEYEVENTF_KEYUP;
+    }
+    SendInput((UINT)(n * 2), in.data(), sizeof(INPUT));
 }
 
 // ----------------------------------------------------------- hotkey thread
@@ -531,6 +555,7 @@ static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrCreateApiLayerInstance(
     nextGIPA(*instance, "xrWaitFrame",            reinterpret_cast<PFN_xrVoidFunction*>(&g_nextWaitFrame));
     nextGIPA(*instance, "xrEndFrame",             reinterpret_cast<PFN_xrVoidFunction*>(&g_nextEndFrame));
 
+    LoadBounceKeys();
     EnsureHotkeyThread();
     Log("instance ready (locateViews=%p locateSpace=%p)",
         reinterpret_cast<void*>(g_nextLocateViews), reinterpret_cast<void*>(g_nextLocateSpace));

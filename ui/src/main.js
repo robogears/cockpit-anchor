@@ -34,7 +34,7 @@ function createWindow() {
   win.on('closed', () => { win = null; });
 }
 
-function showWin() { if (!win) createWindow(); else { win.show(); win.focus(); } }
+function showWin() { try { cfg.syncBounceKey(); } catch {} if (!win) createWindow(); else { win.show(); win.focus(); } }
 
 function createTray() {
   try {
@@ -150,5 +150,5 @@ if (!app.requestSingleInstanceLock()) {
 } else {
   app.on('second-instance', showWin);
   app.on('window-all-closed', () => { /* stay alive in the tray */ });
-  app.whenReady().then(() => { createWindow(); createTray(); checkOnLaunch(); });
+  app.whenReady().then(() => { try { cfg.syncBounceKey(); } catch {} createWindow(); createTray(); checkOnLaunch(); });
 }
