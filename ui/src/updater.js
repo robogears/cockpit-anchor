@@ -102,14 +102,25 @@ async function download(url, onProgress) {
   }
 }
 
-// NSIS silent install: detects the running app via its semaphore, closes it, replaces
-// files in %LOCALAPPDATA%\Programs\..., and relaunches the new version (runAfterFinish).
+// Apply the staged update and relaunch the new version. We don't rely on NSIS's own
+// relaunch-after-silent-install (unreliable for a custom updater); instead a detached, hidden
+// PowerShell helper: waits for THIS app to exit, runs the installer silently (NSIS replaces the
+// files in place), then launches the new exe at the same path (process.execPath). The app's
+// single-instance lock makes any double-launch harmless.
 function apply() {
   if (!pendingInstaller) return false;
-  const child = spawn(pendingInstaller, ['/S', '--updated'], { detached: true, stdio: 'ignore', windowsHide: true });
+  const q = (s) => String(s).replace(/'/g, "''");
+  const installer = q(pendingInstaller);
+  const exe = q(process.execPath);
+  const ps =
+    `Start-Sleep -Milliseconds 800; ` +
+    `Start-Process -FilePath '${installer}' -ArgumentList '/S' -Wait; ` +
+    `Start-Process -FilePath '${exe}'`;
+  const child = spawn('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-Command', ps],
+    { detached: true, stdio: 'ignore', windowsHide: true });
   child.unref();
   app.isQuitting = true;
-  setTimeout(() => app.quit(), 300);
+  setTimeout(() => app.quit(), 200);
   return true;
 }
 

@@ -162,13 +162,14 @@ async function wireUpdateButton(btn, p) {
     return;
   }
   let st = 'idle';
-  btn.textContent = 'Download update';
+  btn.textContent = 'Get the update';
   btn.onclick = async () => {
     if (st === 'idle') {
-      st = 'downloading'; btn.disabled = true; btn.textContent = 'Starting…';
+      // download + stage the installer in the background; the silent install runs on restart
+      st = 'downloading'; btn.disabled = true; btn.textContent = 'Getting update…';
       const r = await api.downloadUpdate(p.downloadUrl);
-      if (!r || !r.ok) { st = 'idle'; btn.disabled = false; btn.textContent = 'Download failed — retry'; return; }
-      st = 'ready'; btn.disabled = false; btn.classList.add('ready'); btn.textContent = 'Restart to apply';
+      if (!r || !r.ok) { st = 'idle'; btn.disabled = false; btn.textContent = 'Update failed — retry'; return; }
+      st = 'ready'; btn.disabled = false; btn.classList.add('ready'); btn.textContent = 'Click to restart';
     } else if (st === 'ready') {
       st = 'restarting'; btn.disabled = true; btn.textContent = 'Restarting…'; api.applyUpdate();
     }
@@ -179,7 +180,7 @@ if (api) {
   api.onUpdateAvailable((p) => { if (surfaceReady) showUpdateNotice(p); else pendingUpdate = p; });
   api.onUpdateProgress(({ downloaded, total }) => {
     const btn = $('#upBtn'); if (!btn) return;
-    btn.textContent = total > 0 ? `Downloading ${Math.floor((downloaded / total) * 100)}%` : `Downloading ${(downloaded / 1048576).toFixed(1)} MB`;
+    btn.textContent = total > 0 ? `Installing… ${Math.floor((downloaded / total) * 100)}%` : `Installing… ${(downloaded / 1048576).toFixed(1)} MB`;
   });
   api.getAppVersion().then((v) => { const e = document.querySelector('.ver'); if (e && v) e.textContent = 'v' + v; });
 
