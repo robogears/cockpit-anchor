@@ -1,15 +1,11 @@
-# What's new in v0.2.5
+# What's new in v0.2.6
 
-**Fixes the in-app updater.** Previously, **Click to restart** could close the app without
-reinstalling or relaunching. The update helper now runs as a detached process that survives the
-quit, waits for the old app to fully exit, installs silently, verifies the new build, and relaunches
-it — logging each step to `%TEMP%\cockpitanchor-update.log` for diagnosis.
+A tiny test release — the dummy target for verifying the **fixed in-app updater** from v0.2.5.
 
-Releases now ship **only** `CockpitAnchor-Setup.exe` (the layer-only zip is retired).
+If you're on **v0.2.5** and used **Check for updates → Get the update → Click to restart**, and the
+title bar now reads **v0.2.6**, the self-update path works end-to-end. 🎉
 
-> ℹ️ **Bootstrapping note:** the updater that runs during an update is the one baked into the
-> version you're updating *from*. If you're on v0.2.3/v0.2.4, install this build manually once
-> (download & run `CockpitAnchor-Setup.exe`); from v0.2.5 onward the in-app updater works.
+No functional changes from v0.2.5.
 
 > ⚠️ **Beta, and built by AI** — see the [README](https://github.com/robogears/cockpit-anchor#readme).
 
@@ -26,4 +22,4 @@ Download **`CockpitAnchor-Setup.exe`** and run it *(SmartScreen → More info �
 
 ---
 
-**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.4...v0.2.5
+**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.5...v0.2.6
