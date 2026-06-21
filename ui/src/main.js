@@ -30,7 +30,7 @@ function createWindow() {
   });
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
   win.once('ready-to-show', () => win.show());
-  win.on('close', (e) => { if (!app.isQuitting) { e.preventDefault(); win.hide(); } }); // close = hide to tray
+  win.on('close', (e) => { if (!app.isQuitting) { e.preventDefault(); win.hide(); } }); // safety: only ever quit via the exit button / tray Quit
   win.on('closed', () => { win = null; });
 }
 
@@ -120,7 +120,11 @@ ipcMain.handle('install-layer', () => runElevated(path.join(layerDir(), 'install
 ipcMain.handle('uninstall-layer', () => runElevated(path.join(layerDir(), 'uninstall.ps1')));
 ipcMain.handle('open-logs', () => shell.openPath(cfg.LOG));
 ipcMain.handle('open-data', () => shell.openPath(cfg.DATA_DIR));
-ipcMain.handle('win', (_e, action) => { if (!win) return; if (action === 'min') win.minimize(); else if (action === 'close') win.close(); });
+ipcMain.handle('win', (_e, action) => {
+  if (!win) return;
+  if (action === 'min') { if (tray) win.hide(); else win.minimize(); }   // minimize → tray (the layer keeps running without the app open)
+  else if (action === 'close') { app.isQuitting = true; app.quit(); }    // exit → quit entirely
+});
 
 // --- updater ---
 ipcMain.handle('app:version', () => app.getVersion());

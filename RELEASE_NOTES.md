@@ -1,11 +1,13 @@
-# What's new in v0.2.6
+# What's new in v0.2.7
 
-A tiny test release — the dummy target for verifying the **fixed in-app updater** from v0.2.5.
+**Window buttons now behave like a proper tray app:**
 
-If you're on **v0.2.5** and used **Check for updates → Get the update → Click to restart**, and the
-title bar now reads **v0.2.6**, the self-update path works end-to-end. 🎉
+- **Minimize (–)** → drops to the **system tray** (out of the taskbar). Click the tray icon to bring it back.
+- **Exit (✕)** → **quits the control panel entirely.**
 
-No functional changes from v0.2.5.
+This is safe because the anchoring + auto-fix run in the OpenXR **layer**, which is installed
+system-wide and loads inside Assetto Corsa whether or not the control panel is open. So you can quit
+the app and everything still works — reopen it only when you want to change settings or check status.
 
 > ⚠️ **Beta, and built by AI** — see the [README](https://github.com/robogears/cockpit-anchor#readme).
 
@@ -14,7 +16,7 @@ No functional changes from v0.2.5.
 # Install
 
 Download **`CockpitAnchor-Setup.exe`** and run it *(SmartScreen → More info → Run anyway)*, then
-**Install layer** in the app.
+**Install layer** in the app. Already installed? Use **Check for updates → Get the update → Click to restart**.
 
 ## Requirements
 - Assetto Corsa (original) via Content Manager + Custom Shaders Patch, **OpenVR** rendering mode
@@ -22,4 +24,4 @@ Download **`CockpitAnchor-Setup.exe`** and run it *(SmartScreen → More info �
 
 ---
 
-**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.5...v0.2.6
+**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.6...v0.2.7
