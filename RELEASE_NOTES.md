@@ -1,12 +1,10 @@
-# What's new in v0.2.0
+# What's new in v0.2.1
 
-A big one — Cockpit Anchor gets a **desktop app**, **fixes the launch black screen automatically**, and lays the groundwork for **more sims**.
+A small follow-up to v0.2.0.
 
 ## Highlights
-- 🖥️ **New control-panel app** — a proper installer (`CockpitAnchor-Setup.exe`) with a dark, telemetry-style UI. See your seat-lock status at a glance, choose which games it's active for, and install/uninstall the layer right from the app. It tucks into your system tray.
-- ⚫ **Automatic black-screen fix** — Virtual Desktop sometimes launches Assetto Corsa to a black or frozen frame. Cockpit Anchor now clears it for you a second or two after you drop in (the same "pop out to the Virtual Desktop view and back" you'd do by hand). Expect a quick flip on launch — that's it working.
-- 🔄 **In-app updates** — the app checks for new releases and can update itself.
-- 🎮 **Multi-sim groundwork** — built to support more seated VR sims; for now **Assetto Corsa is the tested, supported one**, with others marked "coming soon" in the app.
+- ⚓ **Proper anchor app icon** — the app window, installer, taskbar, and system-tray icon are now the Cockpit Anchor mark (v0.2.0 still shipped a placeholder icon).
+- 🔄 Fresh build of the v0.2.0 control panel so a clean install has everything in place (telemetry UI, automatic black-screen fix, game icons, "coming soon" multi-sim slots).
 
 > ⚠️ **Beta, and built by AI** — expect rough edges, back up your data, use at your own risk. See the [README](https://github.com/robogears/cockpit-anchor#readme).
 
@@ -14,11 +12,11 @@ A big one — Cockpit Anchor gets a **desktop app**, **fixes the launch black sc
 
 # Install
 
-**Easy way:** download **`CockpitAnchor-Setup.exe`** below and run it. *(Windows SmartScreen may warn it's from an unknown publisher — click **More info → Run anyway**; the app is unsigned.)* Then click **Install layer** in the app.
+Same as before: download **`CockpitAnchor-Setup.exe`** below and run it. *(Windows SmartScreen → **More info → Run anyway**; the app is unsigned.)* Then click **Install layer** in the app.
 
-**Manual / layer-only:** download **`CockpitAnchor-v0.2.0.zip`**, extract it, and double-click **`Install.bat`**.
+Manual / layer-only: **`CockpitAnchor-v0.2.1.zip`** → extract → `Install.bat`.
 
-Then do the one-time VR setup in the [README](https://github.com/robogears/cockpit-anchor#readme), get in a car, and press **`Ctrl+Shift+S`** to calibrate. Your saved seat lives in `%LOCALAPPDATA%\CockpitAnchor\` and is kept across updates.
+Already on v0.2.0? The app can update itself — hit **Check for updates**.
 
 ## Requirements
 - Assetto Corsa (original) via Content Manager + Custom Shaders Patch, **OpenVR** rendering mode
@@ -28,4 +26,4 @@ Then do the one-time VR setup in the [README](https://github.com/robogears/cockp
 
 ---
 
-**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.1.2...v0.2.0
+**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.0...v0.2.1

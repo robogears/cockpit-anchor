@@ -21,6 +21,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 560, height: 500, minWidth: 470, minHeight: 430,
     frame: false, backgroundColor: '#080a0d', show: false,
+    icon: path.join(__dirname, '..', 'build', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
