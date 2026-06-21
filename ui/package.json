@@ -1,7 +1,7 @@
 {
   "name": "cockpit-anchor-ui",
   "productName": "Cockpit Anchor",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Control panel for Cockpit Anchor — enable/disable games and manage your VR seat anchor.",
   "main": "src/main.js",
   "scripts": {
