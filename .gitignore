@@ -21,3 +21,6 @@ config/seat-anchor.json
 # Local reference material
 vdxrwiki/
 backups/
+
+# Editor / experiment backups
+*.bak

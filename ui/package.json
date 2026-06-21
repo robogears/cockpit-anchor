@@ -1,0 +1,66 @@
+{
+  "name": "cockpit-anchor-ui",
+  "productName": "Cockpit Anchor",
+  "version": "0.2.0",
+  "description": "Control panel for Cockpit Anchor — enable/disable games and manage your VR seat anchor.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "icons": "node scripts/gen-icon.js",
+    "dist": "node scripts/gen-icon.js && electron-builder --win"
+  },
+  "author": "robogears",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^42.4.1",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.robogears.cockpitanchor",
+    "productName": "Cockpit Anchor",
+    "publish": null,
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../api-layer/install.ps1",
+        "to": "layer/install.ps1"
+      },
+      {
+        "from": "../api-layer/uninstall.ps1",
+        "to": "layer/uninstall.ps1"
+      },
+      {
+        "from": "../api-layer/build/CockpitAnchorLayer.dll",
+        "to": "layer/CockpitAnchorLayer.dll"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "CockpitAnchor-Setup.exe",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>Cockpit Anchor</title>
+</head>
+<body>
+  <header class="titlebar">
+    <div class="tb-title"><svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="2.4"/><line x1="12" y1="6.9" x2="12" y2="20.5"/><line x1="8.2" y1="10" x2="15.8" y2="10"/><path d="M5 13.4a7 7 0 0 0 14 0"/><path d="M5 13.4l-1.7 -1"/><path d="M19 13.4l1.7 -1"/></svg><span class="brand">COCKPIT ANCHOR</span><span class="ver">v0.2.0</span></div>
+    <div class="tb-ctrls">
+      <button id="min" class="tb-btn" title="Minimize" aria-label="Minimize">&#8211;</button>
+      <button id="close" class="tb-btn close" title="Close to tray" aria-label="Close to tray">&#10005;</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="updateNotice" class="banner update" hidden></section>
+
+    <section class="cluster">
+      <div class="cluster-head">
+        <span class="cluster-label">System status</span>
+        <label class="switch big" title="Master anchoring switch"><input type="checkbox" id="master" /><span class="slider"></span></label>
+      </div>
+      <div class="lamps">
+        <div class="lamp" id="lampLayer">
+          <div class="lamp-top"><span class="lamp-dot"></span><span class="lamp-name">Layer</span></div>
+          <span class="lamp-state" id="layerState">&mdash;</span>
+        </div>
+        <div class="lamp" id="lampAnchor">
+          <div class="lamp-top"><span class="lamp-dot"></span><span class="lamp-name">Anchoring</span></div>
+          <span class="lamp-state" id="anchorState">&mdash;</span>
+        </div>
+        <div class="lamp" id="lampFix">
+          <div class="lamp-top"><span class="lamp-dot"></span><span class="lamp-name">Auto-fix</span></div>
+          <span class="lamp-state" id="fixState">&mdash;</span>
+        </div>
+      </div>
+      <div class="cluster-foot" id="clusterFoot"></div>
+    </section>
+
+    <section class="block">
+      <div class="block-head">
+        <span>Games</span>
+        <button id="addGame" class="btn small">+ Add game</button>
+      </div>
+      <div id="games" class="games"></div>
+      <div class="known locked">
+        <span class="known-label">Quick add</span>
+        <div id="known" class="chips" aria-hidden="true"></div>
+        <div class="soon-overlay"><button id="comingSoon" class="btn soon" type="button">Coming soon</button></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="foot-left">
+      <button id="checkUpdates" class="btn ghost">Check for updates</button>
+      <button id="openLogs" class="btn ghost">Logs</button>
+      <button id="openData" class="btn ghost">Config</button>
+    </div>
+    <button id="uninstall" class="btn ghost danger">Uninstall layer</button>
+  </footer>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

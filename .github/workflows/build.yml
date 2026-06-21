@@ -24,7 +24,13 @@ jobs:
         run: |
           cl /nologo /LD /MT /EHsc /O2 /std:c++17 /DWIN32 /D_WINDOWS /I"deps\OpenXR-SDK\include" "api-layer\src\layer.cpp" /Fe:"CockpitAnchorLayer.dll"
 
-      - name: Package release zip
+      - name: Stage DLL for the installer
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force api-layer\build | Out-Null
+          Copy-Item CockpitAnchorLayer.dll api-layer\build\CockpitAnchorLayer.dll -Force
+
+      - name: Package layer-only zip (manual install)
         shell: pwsh
         run: |
           $stage = "CockpitAnchor-${{ github.ref_name }}"
@@ -38,6 +44,21 @@ jobs:
           New-Item -ItemType Directory -Force dist | Out-Null
           Compress-Archive -Path $stage -DestinationPath "dist\CockpitAnchor-${{ github.ref_name }}.zip" -Force
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Build UI installer (electron-builder, NSIS)
+        working-directory: ui
+        run: |
+          npm ci
+          npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create draft release
         uses: softprops/action-gh-release@v2
         with:
@@ -45,4 +66,6 @@ jobs:
           name: ${{ github.ref_name }}
           body_path: RELEASE_NOTES.md
           fail_on_unmatched_files: true
-          files: dist/CockpitAnchor-${{ github.ref_name }}.zip
+          files: |
+            dist/CockpitAnchor-${{ github.ref_name }}.zip
+            ui/dist/CockpitAnchor-Setup.exe

@@ -103,12 +103,38 @@ static PFN_xrPollEvent            g_nextPollEvent            = nullptr;
 static PFN_xrBeginSession         g_nextBeginSession         = nullptr;
 static PFN_xrWaitFrame            g_nextWaitFrame            = nullptr;
 static PFN_xrEndFrame             g_nextEndFrame             = nullptr;
+static PFN_xrEndSession           g_nextEndSession           = nullptr;
+static PFN_xrDestroySession       g_nextDestroySession       = nullptr;
 
 // ------------------------------------------------------------------- state
 static XrSession g_session    = XR_NULL_HANDLE;
 static XrSpace   g_stageSpace = XR_NULL_HANDLE;   // our room-fixed reference
 static XrSpace   g_renderSpace = XR_NULL_HANDLE;  // the seated space AC renders against
 static XrTime    g_displayTime = 0;
+
+// Session-churn ground truth: with OpenComposite's old behaviour we see 3 xrCreateSession at launch
+// (temp-graphics -> real-graphics -> inputs-restart). The deferInputProfileQuery fix should drop that
+// to 2. Counters + lifecycle logging let us PROVE the churn shrank and pinpoint which teardown (if any)
+// precedes a black frame, without needing to see the headset.
+static int g_createCount  = 0;   // xrCreateSession calls so far this instance
+static int g_destroyCount = 0;   // xrDestroySession calls so far this instance
+
+// ---- AUTO VR-BOUNCE: programmatic Virtual Desktop dashboard-bounce (Assetto Corsa launch black screen)
+// The launch black screen is purely VD-side: on a bad launch AC submits perfect frames (layerCount=1,
+// correct poses) but VD's compositor never starts scan-out. The ONE thing that reliably clears it is the
+// manual VD bounce — toggling out to the Virtual Desktop environment and back. The user confirmed that
+// pressing VD's "Toggle VR Mode" hotkey (Shift+Win+D) TWICE clears it. So once the final session has been
+// FOCUSED and settled, we reproduce that automatically: SendInput Shift+Win+D, dwell, Shift+Win+D again.
+// (A blank-frame layerCount=0 "nudge" was tried first and did NOT work — blank frames don't trigger VD's
+// visibility switch; only the real hotkey does.) Fires ONCE per session generation. It runs on EVERY
+// launch — the app looks healthy whether or not VD will go black, so we can't distinguish good from bad;
+// the cost is a brief VR→VD→VR flip each load. All tunable; rebuild to change. Disable: BOUNCE_ENABLED=false.
+static const bool     BOUNCE_ENABLED  = true;   // master switch
+static const unsigned BOUNCE_DELAY_MS = 1500;   // wait this long after the final session reaches FOCUSED
+static const unsigned BOUNCE_GAP_MS   = 1200;   // dwell in the VD environment between the two key presses
+static std::atomic<int>                g_bounceArmGen{0};   // g_createCount snapshot at FOCUSED (0 = disarmed)
+static std::atomic<unsigned long long> g_bounceArmTick{0};  // GetTickCount64() at that FOCUSED
+static int                             g_lastBouncedGen = 0; // hotkey-thread only: last generation we bounced
 
 static XrPosef           g_anchor = IdentityPose();
 static bool              g_anchorValid = false;
@@ -164,6 +190,20 @@ static void BeepFailed()  { PlayTone(300, 280); }                      // low bu
 static void BeepEnabled() { PlayTone(880, 110); }                      // anchor on
 static void BeepBypass()  { PlayTone(440, 130); }                      // anchor off
 
+// Sends Virtual Desktop's "Toggle VR Mode" hotkey (Shift+Win+D) as one chord: flips between the VR game
+// and the Virtual Desktop environment. Two of these (out, then back) reproduce the manual bounce.
+static void SendToggleVrMode() {
+    INPUT in[6] = {};
+    const WORD vk[6] = { VK_LSHIFT, VK_LWIN, 'D', 'D',  VK_LWIN, VK_LSHIFT };
+    const bool up[6] = { false,     false,   false, true, true,   true      };
+    for (int i = 0; i < 6; ++i) {
+        in[i].type       = INPUT_KEYBOARD;
+        in[i].ki.wVk     = vk[i];
+        in[i].ki.dwFlags = up[i] ? KEYEVENTF_KEYUP : 0;
+    }
+    SendInput(6, in, sizeof(INPUT));
+}
+
 // ----------------------------------------------------------- hotkey thread
 static DWORD WINAPI HotkeyThread(LPVOID) {
     bool prevCal = false, prevTog = false;
@@ -181,6 +221,21 @@ static DWORD WINAPI HotkeyThread(LPVOID) {
         if (res == 1) BeepSaved();
         else if (res == 2) BeepFailed();
         prevCal = cal; prevTog = tog;
+
+        // Auto VR-bounce: once the final session has been FOCUSED for BOUNCE_DELAY_MS, press the VD
+        // "Toggle VR Mode" hotkey twice (out to the VD environment, then back) to clear the black screen.
+        if (BOUNCE_ENABLED) {
+            int armGen = g_bounceArmGen.load();
+            if (armGen != 0 && armGen != g_lastBouncedGen
+                && GetTickCount64() - g_bounceArmTick.load() >= BOUNCE_DELAY_MS) {
+                g_lastBouncedGen = armGen;
+                Log("[bounce] auto VR-bounce (gen=%d): Shift+Win+D x2 to clear the VD launch black screen", armGen);
+                SendToggleVrMode();
+                Sleep(BOUNCE_GAP_MS);
+                SendToggleVrMode();
+                Log("[bounce] auto VR-bounce done (gen=%d)", armGen);
+            }
+        }
         Sleep(40);
     }
 }
@@ -260,6 +315,8 @@ static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrCreateSession(
         XrInstance instance, const XrSessionCreateInfo* ci, XrSession* session) {
     XrResult r = g_nextCreateSession(instance, ci, session);
     if (XR_SUCCEEDED(r) && session) {
+        g_createCount++;
+        g_bounceArmGen.store(0);     // a new session means the churn hasn't settled yet -> disarm the bounce
         g_session = *session;
         g_renderSpace = XR_NULL_HANDLE;
         if (g_nextCreateReferenceSpace) {
@@ -272,7 +329,8 @@ static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrCreateSession(
             else { g_stageSpace = XR_NULL_HANDLE; Log("FAILED to create STAGE space r=%d", (int)sr); }
         }
     }
-    Log("xrCreateSession r=%d", (int)r);
+    Log("xrCreateSession #%d r=%d  (created=%d destroyed=%d, live=%d)",
+        g_createCount, (int)r, g_createCount, g_destroyCount, g_createCount - g_destroyCount);
     return r;
 }
 
@@ -310,6 +368,10 @@ static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrPollEvent(XrInstance instance, XrE
         case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
             auto* e = reinterpret_cast<const XrEventDataSessionStateChanged*>(ev);
             Log("[evt] SessionState -> %s", SessionStateName(e->state));
+            if (BOUNCE_ENABLED && e->state == XR_SESSION_STATE_FOCUSED) {
+                g_bounceArmGen.store(g_createCount);   // arm the auto-bounce against the current (final) session
+                g_bounceArmTick.store(GetTickCount64());
+            }
             break; }
         case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING: {
             auto* e = reinterpret_cast<const XrEventDataReferenceSpaceChangePending*>(ev);
@@ -327,8 +389,25 @@ static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrPollEvent(XrInstance instance, XrE
 
 static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrBeginSession(XrSession s, const XrSessionBeginInfo* bi) {
     XrResult r = g_nextBeginSession(s, bi);
-    Log("xrBeginSession r=%d", (int)r);
+    Log("xrBeginSession r=%d  (session #%d)", (int)r, g_createCount);
     return r;
+}
+
+// Lifecycle hooks: end/destroy of each session. A black-screen launch should correlate with a
+// destroy landing AFTER a FOCUSED transition; with the OpenComposite deferInputProfileQuery fix the
+// post-FOCUSED inputs-restart destroy should be gone entirely (live count stays at 1 after the
+// graphics recreation settles).
+static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrEndSession(XrSession s) {
+    Log("xrEndSession  (session #%d)", g_createCount);
+    return g_nextEndSession(s);
+}
+
+static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrDestroySession(XrSession s) {
+    g_destroyCount++;
+    Log("xrDestroySession #%d  (created=%d destroyed=%d, live=%d)",
+        g_destroyCount, g_createCount, g_destroyCount, g_createCount - g_destroyCount);
+    if (s == g_session) g_session = XR_NULL_HANDLE;
+    return g_nextDestroySession(s);
 }
 
 static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrWaitFrame(XrSession s, const XrFrameWaitInfo* wi, XrFrameState* fs) {
@@ -355,6 +434,7 @@ static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrEndFrame(XrSession s, const XrFram
                 fi->layerCount, (long long)fi->displayTime, (int)fi->environmentBlendMode);
         }
     }
+
     return g_nextEndFrame(s, fi);
 }
 
@@ -377,6 +457,8 @@ static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrGetInstanceProcAddr(
     if (!strcmp(name, "xrLocateViews"))           return bind(reinterpret_cast<PFN_xrVoidFunction>(Layer_xrLocateViews));
     if (!strcmp(name, "xrPollEvent"))             return bind(reinterpret_cast<PFN_xrVoidFunction>(Layer_xrPollEvent));
     if (!strcmp(name, "xrBeginSession"))          return bind(reinterpret_cast<PFN_xrVoidFunction>(Layer_xrBeginSession));
+    if (!strcmp(name, "xrEndSession"))            return bind(reinterpret_cast<PFN_xrVoidFunction>(Layer_xrEndSession));
+    if (!strcmp(name, "xrDestroySession"))        return bind(reinterpret_cast<PFN_xrVoidFunction>(Layer_xrDestroySession));
     if (!strcmp(name, "xrWaitFrame"))             return bind(reinterpret_cast<PFN_xrVoidFunction>(Layer_xrWaitFrame));
     if (!strcmp(name, "xrEndFrame"))              return bind(reinterpret_cast<PFN_xrVoidFunction>(Layer_xrEndFrame));
     if (!strcmp(name, "xrDestroyInstance"))       return bind(reinterpret_cast<PFN_xrVoidFunction>(Layer_xrDestroyInstance));
@@ -444,6 +526,8 @@ static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrCreateApiLayerInstance(
     nextGIPA(*instance, "xrLocateSpace",          reinterpret_cast<PFN_xrVoidFunction*>(&g_nextLocateSpace));
     nextGIPA(*instance, "xrPollEvent",            reinterpret_cast<PFN_xrVoidFunction*>(&g_nextPollEvent));
     nextGIPA(*instance, "xrBeginSession",         reinterpret_cast<PFN_xrVoidFunction*>(&g_nextBeginSession));
+    nextGIPA(*instance, "xrEndSession",           reinterpret_cast<PFN_xrVoidFunction*>(&g_nextEndSession));
+    nextGIPA(*instance, "xrDestroySession",       reinterpret_cast<PFN_xrVoidFunction*>(&g_nextDestroySession));
     nextGIPA(*instance, "xrWaitFrame",            reinterpret_cast<PFN_xrVoidFunction*>(&g_nextWaitFrame));
     nextGIPA(*instance, "xrEndFrame",             reinterpret_cast<PFN_xrVoidFunction*>(&g_nextEndFrame));
 
