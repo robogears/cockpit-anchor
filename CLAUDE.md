@@ -47,7 +47,7 @@ game list):
   `ui/dist/CockpitAnchor-Setup.exe`; needs the layer DLL built first — it's bundled via `extraResources`).
 - **Release:** bump `ui/package.json` version to `X.Y.Z` (must equal the tag), update `RELEASE_NOTES.md`,
   then `git tag vX.Y.Z && git push origin main && git push origin vX.Y.Z`. CI drafts a release with the
-  installer + zip; publish it with `gh release edit vX.Y.Z --draft=false --latest`. The in-app updater then
+  installer (`CockpitAnchor-Setup.exe` only); publish it with `gh release edit vX.Y.Z --draft=false --latest`. The in-app updater then
   offers it to existing users (it matches the published asset named `…Setup.exe` and compares versions).
 
 ## Conventions / gotchas

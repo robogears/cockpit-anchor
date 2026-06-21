@@ -30,20 +30,6 @@ jobs:
           New-Item -ItemType Directory -Force api-layer\build | Out-Null
           Copy-Item CockpitAnchorLayer.dll api-layer\build\CockpitAnchorLayer.dll -Force
 
-      - name: Package layer-only zip (manual install)
-        shell: pwsh
-        run: |
-          $stage = "CockpitAnchor-${{ github.ref_name }}"
-          New-Item -ItemType Directory -Force $stage | Out-Null
-          Copy-Item CockpitAnchorLayer.dll  $stage\
-          Copy-Item api-layer\Install.bat   $stage\
-          Copy-Item api-layer\Uninstall.bat $stage\
-          Copy-Item api-layer\install.ps1   $stage\
-          Copy-Item api-layer\uninstall.ps1 $stage\
-          Copy-Item README.md               $stage\
-          New-Item -ItemType Directory -Force dist | Out-Null
-          Compress-Archive -Path $stage -DestinationPath "dist\CockpitAnchor-${{ github.ref_name }}.zip" -Force
-
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -67,5 +53,4 @@ jobs:
           body_path: RELEASE_NOTES.md
           fail_on_unmatched_files: true
           files: |
-            dist/CockpitAnchor-${{ github.ref_name }}.zip
             ui/dist/CockpitAnchor-Setup.exe

@@ -102,25 +102,71 @@ async function download(url, onProgress) {
   }
 }
 
-// Apply the staged update and relaunch the new version. We don't rely on NSIS's own
-// relaunch-after-silent-install (unreliable for a custom updater); instead a detached, hidden
-// PowerShell helper: waits for THIS app to exit, runs the installer silently (NSIS replaces the
-// files in place), then launches the new exe at the same path (process.execPath). The app's
-// single-instance lock makes any double-launch harmless.
+// Apply the staged update and relaunch the new version.
+//
+// On Windows a process spawned directly by Electron lives inside Electron's job object and is
+// killed when the app exits — so a first-generation detached helper gets torn down mid-flight
+// (this is exactly why the old version "closed the app and then did nothing"). The fix is to run
+// the work as a GRANDCHILD: we spawn cmd.exe, which `start`s a detached batch file. libuv marks
+// the job SILENT_BREAKAWAY_OK, so the grandchild escapes the job and outlives our quit.
+//
+// The batch: waits for THIS pid to actually exit (filtered by pid AND image name), runs the NSIS
+// installer silently and waits for it, verifies the new exe is in place, relaunches it, and logs
+// every step to %TEMP%\cockpitanchor-update.log. The single-instance lock makes any double-launch
+// harmless; on a stuck-shutdown timeout it aborts rather than install over a locked exe.
 function apply() {
   if (!pendingInstaller) return false;
-  const q = (s) => String(s).replace(/'/g, "''");
-  const installer = q(pendingInstaller);
-  const exe = q(process.execPath);
-  const ps =
-    `Start-Sleep -Milliseconds 800; ` +
-    `Start-Process -FilePath '${installer}' -ArgumentList '/S' -Wait; ` +
-    `Start-Process -FilePath '${exe}'`;
-  const child = spawn('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-Command', ps],
+  const exe = process.execPath;            // installed app path; unchanged by the reinstall
+  const exeBase = path.basename(exe);      // e.g. "Cockpit Anchor.exe"
+  const pid = process.pid;
+  const installer = pendingInstaller;      // staged Setup.exe in %TEMP%
+  const bat = path.join(os.tmpdir(), `cockpitanchor-apply-${Date.now()}.cmd`);
+
+  const lines = [
+    '@echo off',
+    'setlocal enableextensions',
+    'set "LOG=%TEMP%\\cockpitanchor-update.log"',
+    `>"%LOG%" echo [%date% %time%] helper start; waiting for pid ${pid}`,
+    'set /a tries=0',
+    ':wait',
+    `tasklist /nh /fi "PID eq ${pid}" /fi "IMAGENAME eq ${exeBase}" 2>nul | find /i "${exeBase}" >nul`,
+    'if errorlevel 1 goto gone',
+    'set /a tries+=1',
+    'if %tries% geq 60 goto giveup',
+    'ping -n 2 127.0.0.1 >nul',
+    'goto wait',
+    ':gone',
+    '>>"%LOG%" echo [%date% %time%] old app exited; installing',
+    `start "" /wait "${installer}" /S`,
+    '>>"%LOG%" echo [%date% %time%] installer returned %errorlevel%',
+    'ping -n 3 127.0.0.1 >nul',
+    `if not exist "${exe}" goto installfail`,
+    '>>"%LOG%" echo [%date% %time%] relaunching app',
+    `start "" "${exe}"`,
+    '>>"%LOG%" echo [%date% %time%] done',
+    'goto cleanup',
+    ':installfail',
+    '>>"%LOG%" echo [%date% %time%] ERROR: new exe missing after install; not relaunching',
+    'goto cleanup',
+    ':giveup',
+    '>>"%LOG%" echo [%date% %time%] ERROR: old app still running after timeout; aborting',
+    'goto cleanup',
+    ':cleanup',
+    `del "${installer}" >nul 2>&1`,
+    '(goto) 2>nul & del "%~f0"',
+  ];
+  fs.writeFileSync(bat, lines.join('\r\n') + '\r\n', 'utf8');
+
+  // cmd.exe -> `start` makes the batch a detached grandchild that breaks away from Electron's job
+  // object and outlives our quit. Let Node quote the args (no windowsVerbatimArguments).
+  const child = spawn('cmd.exe', ['/c', 'start', '', '/min', bat],
     { detached: true, stdio: 'ignore', windowsHide: true });
   child.unref();
+
   app.isQuitting = true;
-  setTimeout(() => app.quit(), 200);
+  app.quit();
+  // Guarantee the process dies promptly so the helper's pid-wait proceeds, even if quit stalls.
+  setTimeout(() => { try { app.exit(0); } catch {} }, 1500);
   return true;
 }
 

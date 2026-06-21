@@ -84,23 +84,11 @@ Cockpit Anchor locks your seat to your **real room**, so it needs a stable, room
 
 ### Part 4 — Install Cockpit Anchor
 
-**The easy way — the app installer:**
-
 1. On the **[latest release](../../releases/latest)** page, download **`CockpitAnchor-Setup.exe`** and run it.
    - Windows SmartScreen may warn it's from an unknown publisher — click **More info → Run anyway**. *(The app is unsigned; that's expected for a free open-source tool.)*
 2. The **Cockpit Anchor control panel** opens. Click **Install layer** and approve the admin prompt. Done — it tucks itself into your system tray, and you manage everything from there (which games it's active for, your saved-seat status, install/uninstall).
 
-<details>
-<summary>Prefer the manual layer-only install (no app)?</summary>
-
-1. Download the **zip** instead, and **extract it** somewhere you'll keep it.
-2. Double-click **`Install.bat`** and click **Yes** at the admin prompt. When you see "Installed Cockpit Anchor," you're done.
-
-Or run it by hand: open **PowerShell as administrator**, type the line below — including the **space at the end** — then **drag `install.ps1` from the extracted folder into the window** and press **Enter**:
-```
-powershell -ExecutionPolicy Bypass -File 
-```
-</details>
+> 🛠️ **Want just the OpenXR layer, no app?** Build it from source — see [`api-layer/`](api-layer/) (`build.ps1` to compile the DLL, then `install.ps1` to register it). There's no separate layer-only download.
 
 > 🎮 **More sims are coming.** Cockpit Anchor is built to support multiple seated VR sims, and the control panel already has the slots for them — but for now **Assetto Corsa is the one that's tested and supported.** Others are marked "coming soon" in the app.
 
@@ -139,17 +127,17 @@ Most days you'll never touch these. The seat just stays put.
 | Problem | What to do |
 |---|---|
 | Cockpit is in the wrong place after I redrew my Quest boundary | Your room reference moved — just re-calibrate: get in a car, press `Ctrl+Shift+S`. |
-| I want to turn it off for a session | Press `Ctrl+Shift+B`, or remove it with `Uninstall.bat`. |
+| I want to turn it off for a session | Press `Ctrl+Shift+B`, or click **Uninstall layer** in the control panel. |
 | Black screen that doesn't clear on its own | Cockpit Anchor auto-clears the usual launch black screen (that quick flip out to the VD view and back). If one ever sticks, do the bounce by hand: open the Virtual Desktop menu, then go back into VR. Also confirm stage tracking is **ON** (Part 3). |
 | Doesn't seem to do anything | Open the log at `%LOCALAPPDATA%\CockpitAnchor\cockpit-anchor.log` — it should say the layer loaded for Assetto Corsa. |
 
 ## Updating
 
-Download the newer zip, extract it, and double-click **`Install.bat`** — it cleanly replaces the old version (no leftover duplicates). **Your saved seat is kept** — it's stored separately, not in the install folder — so you don't recalibrate. You can delete the old extracted folder afterward.
+When a new version is out, the app shows **Update available** — click **Get the update**, then **Click to restart**, and it installs and relaunches itself. (You can also just re-run the latest **`CockpitAnchor-Setup.exe`**.) **Your saved seat is kept** either way — it's stored separately from the install folder, so you never recalibrate.
 
 ## Uninstall
 
-Double-click **`Uninstall.bat`** in the same folder and click **Yes**. That removes Cockpit Anchor completely — your Assetto Corsa and Virtual Desktop settings are untouched.
+In the control panel, click **Uninstall layer** to unregister it, then remove **Cockpit Anchor** from Windows **Settings → Apps** like any other program. Your Assetto Corsa and Virtual Desktop settings are untouched.
 
 ---
 
