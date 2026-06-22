@@ -13,8 +13,14 @@ $dll = @(
 if (-not $dll) { throw "CockpitAnchorLayer.dll not found near $here. Extract the full release, or build it first (api-layer\build.ps1)." }
 $dll = (Resolve-Path $dll).Path
 
-# Write the layer manifest next to this script, pointing at the DLL. ConvertTo-Json escapes backslashes.
-$manifestPath = Join-Path $here 'CockpitAnchor.json'
+# Write the layer manifest to a STABLE per-user location, NOT beside this script. The app folder is
+# wiped and recreated on every in-app update, so a manifest stored there gets deleted and the
+# registration silently goes stale. %LOCALAPPDATA%\CockpitAnchor survives updates; library_path still
+# points at the DLL (the app re-lays the DLL at the same resources path each update, so the layer
+# auto-upgrades with it). ConvertTo-Json escapes backslashes.
+$dataDir = Join-Path $env:LOCALAPPDATA 'CockpitAnchor'
+New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
+$manifestPath = Join-Path $dataDir 'CockpitAnchor.json'
 [ordered]@{
   file_format_version = '1.0.0'
   api_layer = [ordered]@{

@@ -64,11 +64,24 @@ function clearAnchor(exe) {
   if (exe.toLowerCase() === 'acs.exe') { try { fs.unlinkSync(path.join(DATA_DIR, 'seat-anchor.json')); } catch {} }
 }
 
-// Is a Cockpit Anchor manifest registered as an implicit OpenXR layer (HKLM)?
+// Is a Cockpit Anchor manifest registered as an implicit OpenXR layer (HKLM) AND does it still point
+// at files that exist? A bare registry match isn't enough: a stale registration (e.g. installed from a
+// zip that Windows later cleaned out of %TEMP%) leaves a dangling entry, so the layer can't load even
+// though the key is present. We only report "installed" when the manifest file AND its DLL are real.
 function isLayerInstalled() {
   try {
     const out = execFileSync('reg', ['query', 'HKLM\\SOFTWARE\\Khronos\\OpenXR\\1\\ApiLayers\\Implicit'], { encoding: 'utf8' });
-    return /CockpitAnchor/i.test(out);
+    for (const line of out.split(/\r?\n/)) {
+      const m = line.match(/^\s*(.+\.json)\s+REG_DWORD\s+0x[0-9a-fA-F]+/);
+      if (!m) continue;
+      const manifest = m[1].trim();
+      if (!/CockpitAnchor/i.test(manifest) || !fs.existsSync(manifest)) continue;
+      try {
+        const lib = JSON.parse(fs.readFileSync(manifest, 'utf8'))?.api_layer?.library_path;
+        if (lib && fs.existsSync(lib)) return true;   // manifest + DLL both present → genuinely installed
+      } catch { /* unparseable manifest → keep scanning */ }
+    }
+    return false;
   } catch { return false; }
 }
 

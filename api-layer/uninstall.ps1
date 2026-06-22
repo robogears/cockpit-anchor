@@ -14,4 +14,8 @@ foreach ($hive in 'HKLM','HKCU') {
     }
   }
 }
+# Also remove the generated manifest from the per-user data dir (the DLL and saved seats are kept).
+$manifest = Join-Path $env:LOCALAPPDATA 'CockpitAnchor\CockpitAnchor.json'
+if (Test-Path $manifest) { Remove-Item -LiteralPath $manifest -Force -ErrorAction SilentlyContinue; "Removed manifest: $manifest" }
+
 if ($removed -eq 0) { "No Cockpit Anchor registration found." } else { "Cockpit Anchor unregistered." }
