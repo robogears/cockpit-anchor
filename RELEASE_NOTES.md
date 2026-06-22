@@ -1,11 +1,11 @@
-# What's new in v0.2.10
+# What's new in v0.2.11
 
-**Fixes the game icons not showing.** They were resolving correctly but the control panel's
-content-security-policy was blocking the `data:` image they're delivered as, so you'd see a
-broken-image placeholder. Now Assetto Corsa, iRacing, and any located game show their real icon
-next to the name.
+**Assetto Corsa now shows its real logo.** Content Manager launches `acs.exe`, which has only a blank
+Windows icon — so AC was showing a generic placeholder. The app now uses Assetto Corsa's own logo
+(`content\gui\default_icon.png` from your install) for its tile, falling back to the exe icon if that
+file isn't there.
 
-No other changes from v0.2.9.
+No other changes from v0.2.10.
 
 > ⚠️ **Beta, and built by AI** — see the [README](https://github.com/robogears/cockpit-anchor#readme).
 
@@ -22,4 +22,4 @@ Download **`CockpitAnchor-Setup.exe`** and run it *(SmartScreen → More info �
 
 ---
 
-**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.9...v0.2.10
+**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.10...v0.2.11
