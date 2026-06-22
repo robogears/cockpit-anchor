@@ -5,6 +5,7 @@ const fs = require('fs');
 const { execFile } = require('child_process');
 const cfg = require('./config');
 const updater = require('./updater');
+const gamefinder = require('./gamefinder');
 
 let win = null;
 let tray = null;
@@ -62,15 +63,32 @@ async function gameIcon(g) {
   return null;
 }
 
+// Each game's exe is located at most once per app run (so we don't re-scan for un-findable games).
+const resolveTried = new Set();
+function resolveGamePaths(s) {
+  let dirty = false;
+  for (const g of s.games) {
+    if (g.path && fs.existsSync(g.path)) continue;        // already have a valid path → icon works
+    const key = g.exe.toLowerCase();
+    if (resolveTried.has(key)) continue;
+    resolveTried.add(key);
+    const found = gamefinder.resolveGameExe(g.exe);
+    if (found) { g.path = found; dirty = true; }
+  }
+  return dirty;
+}
+
 async function fullState() {
   const s = cfg.load();
+  if (resolveGamePaths(s)) cfg.save(s);                   // locate missing exes (for their icons), persist once
   const games = await Promise.all(s.games.map(async (g) => ({
     ...g,
-    calibrated: cfg.isCalibrated(g.exe),
+    calibrated: cfg.isCalibrated(g.exe, s.sharedAnchor),
     icon: await gameIcon(g),
   })));
   return {
     masterEnabled: s.masterEnabled,
+    sharedAnchor: s.sharedAnchor,
     installed: cfg.isLayerInstalled(),
     dataDir: cfg.DATA_DIR,
     known: cfg.KNOWN_GAMES.filter((g) => cfg.QUICK_ADD.includes(g.exe.toLowerCase())),
@@ -87,6 +105,7 @@ function runElevated(file) {
 
 ipcMain.handle('get-state', () => fullState());
 ipcMain.handle('set-master', (_e, v) => { const s = cfg.load(); s.masterEnabled = !!v; cfg.save(s); return fullState(); });
+ipcMain.handle('set-shared-anchor', (_e, v) => { const s = cfg.load(); s.sharedAnchor = !!v; cfg.save(s); return fullState(); });
 ipcMain.handle('toggle-game', (_e, { exe, en }) => {
   const s = cfg.load(); const g = s.games.find(x => x.exe.toLowerCase() === exe.toLowerCase());
   if (g) g.enabled = !!en; cfg.save(s); return fullState();
@@ -94,7 +113,7 @@ ipcMain.handle('toggle-game', (_e, { exe, en }) => {
 ipcMain.handle('remove-game', (_e, exe) => {
   const s = cfg.load(); s.games = s.games.filter(x => x.exe.toLowerCase() !== exe.toLowerCase()); cfg.save(s); return fullState();
 });
-ipcMain.handle('clear-anchor', (_e, exe) => { cfg.clearAnchor(exe); return fullState(); });
+ipcMain.handle('clear-anchor', (_e, exe) => { const s = cfg.load(); cfg.clearAnchor(exe, s.sharedAnchor); return fullState(); });
 ipcMain.handle('add-known', (_e, { exe, name }) => {
   const s = cfg.load();
   if (!s.games.some(x => x.exe.toLowerCase() === exe.toLowerCase())) s.games.push({ name, exe, enabled: true });

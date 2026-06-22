@@ -4,6 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('cockpit', {
   getState:       ()           => ipcRenderer.invoke('get-state'),
   setMaster:      (v)          => ipcRenderer.invoke('set-master', v),
+  setSharedAnchor:(v)          => ipcRenderer.invoke('set-shared-anchor', v),
   toggleGame:     (exe, en)    => ipcRenderer.invoke('toggle-game', { exe, en }),
   addGame:        ()           => ipcRenderer.invoke('add-game'),
   addKnown:       (exe, name)  => ipcRenderer.invoke('add-known', { exe, name }),

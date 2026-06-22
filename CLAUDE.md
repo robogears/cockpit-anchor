@@ -9,7 +9,7 @@ this file is for working *on* the code.
 
 | Path | What |
 |---|---|
-| `api-layer/src/layer.cpp` | The **OpenXR API layer** (one C++ file). Re-bases AC's seat + runs the black-screen auto-bounce. AC-only; inert in other apps. |
+| `api-layer/src/layer.cpp` | The **OpenXR API layer** (one C++ file). Re-bases the seat for any *enabled* game; the black-screen auto-bounce stays AC-only. Inert in non-enabled apps. |
 | `api-layer/build.ps1`, `install.ps1`, `uninstall.ps1`, `CockpitAnchor.json` | Build the DLL; register/unregister it as an implicit OpenXR layer (HKLM). |
 | `ui/` | The **Electron control panel** (manage games, status, install/uninstall, auto-update). |
 | `.github/workflows/build.yml` | CI: on tag `v*`, build the DLL + the NSIS installer, draft a GitHub release. |
@@ -35,7 +35,8 @@ between OpenComposite and VDXR. (iRacing is native OpenXR → no OpenComposite n
 The app owns rich state and derives the simple files the layer reads (the layer never parses JSON for the
 game list):
 - `games.json` (app) → derives `enabled-games.txt` (one enabled exe per line; layer reads; absent ⇒ `acs.exe`).
-- `seat-anchor-<stem>.json` (layer ↔ layer) — saved pose. Legacy `seat-anchor.json` migrated for acs.
+- `anchor-mode.txt` (app → layer) — `shared` (default) or `unique`. Shared ⇒ every game uses `seat-anchor.json`; unique ⇒ per-game `seat-anchor-<stem>.json`.
+- `seat-anchor.json` (shared) / `seat-anchor-<stem>.json` (per-game) (layer ↔ layer) — the saved pose.
 - `bounce-key.txt` (app → layer) — optional VD keybind override (decimal VK codes); absent ⇒ `Shift+Win+D`.
 - `cockpit-anchor.log` (layer) — diagnostics.
 

@@ -1,17 +1,16 @@
-# What's new in v0.2.8
+# What's new in v0.2.9
 
-**Makes the layer registration durable, so the anchoring + auto-fix can't silently stop working.**
+**Multi-game support + a shared seat across games, plus real game icons.**
 
-- The OpenXR layer manifest is now written to a **stable location** (`%LOCALAPPDATA%\CockpitAnchor`)
-  that survives app updates, instead of inside the app folder (which every in-app update replaces).
-  It points at the app's bundled DLL, so the layer still **auto-upgrades** with each update.
-- The control panel now **honestly detects** the layer: it only shows "active" when the registered
-  manifest and its DLL actually exist. If a registration ever goes stale, you'll see **Layer OFFLINE →
-  Install layer** instead of a false "active."
-
-*Background:* a stale registration — e.g. from the old layer-only zip run straight out of a temporary
-folder — could point at files Windows later deleted, leaving the layer unable to load. This release
-prevents that and makes it visible if it ever happens.
+- **One seat for every game (default).** Calibrate once and every enabled game loads the same physical
+  seat — no more setting an anchor per game. The layer now activates for any game you've enabled, not
+  just Assetto Corsa.
+- **New toggle — "Shared seat across games."** On by default. Turn it **off** to keep a separate seat
+  per game instead.
+- **Game icons.** The control panel now finds each game's `.exe` (Steam library / common locations) and
+  shows its real icon next to the name.
+- The **auto-fix bounce stays Assetto-Corsa-only** — it's the game with the launch black screen; other
+  games (e.g. iRacing, native OpenXR) get anchoring without the unnecessary VR flip.
 
 > ⚠️ **Beta, and built by AI** — see the [README](https://github.com/robogears/cockpit-anchor#readme).
 
@@ -23,9 +22,9 @@ Download **`CockpitAnchor-Setup.exe`** and run it *(SmartScreen → More info �
 **Install layer** in the app. Already installed? Use **Check for updates → Get the update → Click to restart**.
 
 ## Requirements
-- Assetto Corsa (original) via Content Manager + Custom Shaders Patch, **OpenVR** rendering mode
-- **OpenComposite**; **Virtual Desktop** with **VDXR**; Meta Quest on a **Roomscale** boundary; **Stage tracking ON**
+- A seated VR sim through **VDXR** (Assetto Corsa via OpenComposite is the tested one; others via native OpenXR)
+- **Virtual Desktop**; Meta Quest on a **Roomscale** boundary; **Stage tracking ON**
 
 ---
 
-**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.7...v0.2.8
+**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.8...v0.2.9

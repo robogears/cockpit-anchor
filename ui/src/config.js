@@ -8,6 +8,8 @@ const { execFileSync } = require('child_process');
 const DATA_DIR = path.join(process.env.LOCALAPPDATA || os.homedir(), 'CockpitAnchor');
 const GAMES_JSON = path.join(DATA_DIR, 'games.json');
 const ENABLED_TXT = path.join(DATA_DIR, 'enabled-games.txt');
+const ANCHOR_MODE = path.join(DATA_DIR, 'anchor-mode.txt');     // "shared" | "unique" — read by the layer
+const SHARED_ANCHOR = path.join(DATA_DIR, 'seat-anchor.json');  // the one seat used when sharing is on
 const LOG = path.join(DATA_DIR, 'cockpit-anchor.log');
 
 // Built-in known seated VR sims, for one-click "quick add" (manual-add model).
@@ -29,7 +31,7 @@ const QUICK_ADD = ['iracingsim64dx11.exe'];
 function ensureDir() { fs.mkdirSync(DATA_DIR, { recursive: true }); }
 
 function defaultState() {
-  return { masterEnabled: true, games: [{ name: 'Assetto Corsa', exe: 'acs.exe', enabled: true }] };
+  return { masterEnabled: true, sharedAnchor: true, games: [{ name: 'Assetto Corsa', exe: 'acs.exe', enabled: true }] };
 }
 
 function load() {
@@ -38,6 +40,7 @@ function load() {
     const s = JSON.parse(fs.readFileSync(GAMES_JSON, 'utf8'));
     if (!Array.isArray(s.games)) s.games = [];
     if (typeof s.masterEnabled !== 'boolean') s.masterEnabled = true;
+    if (typeof s.sharedAnchor !== 'boolean') s.sharedAnchor = true;   // default: one seat for all games
     return s;
   } catch {
     const d = defaultState();
@@ -52,20 +55,24 @@ function save(state) {
   // Derive the simple list the DLL reads: enabled exes, one per line (empty if master off).
   const lines = state.masterEnabled ? state.games.filter(g => g.enabled).map(g => g.exe.toLowerCase()) : [];
   fs.writeFileSync(ENABLED_TXT, lines.join('\r\n') + (lines.length ? '\r\n' : ''));
+  // Anchor mode the DLL reads: "shared" (one seat for every game) or "unique" (per-game). Default shared.
+  fs.writeFileSync(ANCHOR_MODE, (state.sharedAnchor === false ? 'unique' : 'shared') + '\r\n');
 }
 
 function anchorPathFor(exe) {
   const stem = exe.replace(/\.[^.]*$/, '').toLowerCase();
   return path.join(DATA_DIR, `seat-anchor-${stem}.json`);
 }
-function isCalibrated(exe) {
+function isCalibrated(exe, shared) {
+  if (shared) return fs.existsSync(SHARED_ANCHOR);                  // shared: one seat covers every game
   if (fs.existsSync(anchorPathFor(exe))) return true;
-  if (exe.toLowerCase() === 'acs.exe' && fs.existsSync(path.join(DATA_DIR, 'seat-anchor.json'))) return true; // legacy
+  if (exe.toLowerCase() === 'acs.exe' && fs.existsSync(SHARED_ANCHOR)) return true; // legacy acs file
   return false;
 }
-function clearAnchor(exe) {
+function clearAnchor(exe, shared) {
+  if (shared) { try { fs.unlinkSync(SHARED_ANCHOR); } catch {} return; }  // shared: clears the one seat for all
   try { fs.unlinkSync(anchorPathFor(exe)); } catch {}
-  if (exe.toLowerCase() === 'acs.exe') { try { fs.unlinkSync(path.join(DATA_DIR, 'seat-anchor.json')); } catch {} }
+  if (exe.toLowerCase() === 'acs.exe') { try { fs.unlinkSync(SHARED_ANCHOR); } catch {} }
 }
 
 // Is a Cockpit Anchor manifest registered as an implicit OpenXR layer (HKLM) AND does it still point

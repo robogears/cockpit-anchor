@@ -12,6 +12,7 @@ function esc(s) {
 const DEMO_STATE = {
   installed: true,
   masterEnabled: true,
+  sharedAnchor: true,
   games: [
     { name: 'Assetto Corsa', exe: 'acs.exe', enabled: true, calibrated: true },
     { name: 'Automobilista 2', exe: 'AMS2AVX.exe', enabled: false, calibrated: false },
@@ -36,6 +37,7 @@ function setLamp(id, cls, text) {
 
 function render() {
   $('#master').checked = state.masterEnabled;
+  const sa = $('#sharedAnchor'); if (sa) sa.checked = state.sharedAnchor !== false;
 
   const installed = !!state.installed;
   const armed = installed && state.masterEnabled;
@@ -146,6 +148,7 @@ if (api) {
   api.getAppVersion().then((v) => { const e = document.querySelector('.ver'); if (e && v) e.textContent = 'v' + v; });
 
   $('#master').onchange = async (e) => refresh(await api.setMaster(e.target.checked));
+  $('#sharedAnchor').onchange = async (e) => refresh(await api.setSharedAnchor(e.target.checked));
   $('#addGame').onclick = async () => refresh(await api.addGame());
   $('#openLogs').onclick = () => api.openLogs();
   $('#openData').onclick = () => api.openData();

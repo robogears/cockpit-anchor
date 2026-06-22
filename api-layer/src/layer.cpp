@@ -66,7 +66,32 @@ static void Log(const char* fmt, ...) {
 // ------------------------------------------------------------- anchor (disk)
 static XrPosef IdentityPose() { XrPosef p{}; p.orientation.w = 1.0f; return p; }
 
-static std::wstring AnchorPath() { return DataDir() + L"\\seat-anchor.json"; }
+static std::string g_hostStem;   // host exe stem, lowercase, no extension (e.g. "acs", "iracingsim64dx11")
+
+// Shared-anchor mode: when ON (the default) every enabled game uses ONE anchor (seat-anchor.json), so
+// you calibrate once and all games load the same physical seat. When OFF, each game gets its own
+// seat-anchor-<stem>.json. The control-panel app writes anchor-mode.txt ("shared" / "unique").
+// (A single STAGE-frame anchor is the same physical seat in every game because all games share VDXR's
+// one room-fixed play-space origin — so "shared" is meaningful, not a hack.)
+static bool SharedAnchorMode() {
+    std::ifstream f((DataDir() + L"\\anchor-mode.txt").c_str());
+    if (!f) return true;                                  // default: shared
+    std::string s; std::getline(f, s);
+    size_t a = s.find_first_not_of(" \t\r\n");
+    if (a == std::string::npos) return true;              // blank -> shared
+    size_t b = s.find_last_not_of(" \t\r\n");
+    std::string t;
+    for (size_t i = a; i <= b; ++i) { char c = s[i]; t += (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c; }
+    return t != "unique";                                 // only the exact "unique" token the app writes flips it
+}
+
+// The anchor file for THIS launch: the shared seat-anchor.json (shared mode) or a per-game file.
+static std::wstring AnchorPath() {
+    if (SharedAnchorMode() || g_hostStem.empty())
+        return DataDir() + L"\\seat-anchor.json";        // shared: one seat for every game
+    std::wstring stem(g_hostStem.begin(), g_hostStem.end());
+    return DataDir() + L"\\seat-anchor-" + stem + L".json";
+}
 
 static void SaveAnchor(const XrPosef& p) {
     FILE* f = _wfopen(AnchorPath().c_str(), L"w");
@@ -144,7 +169,8 @@ static std::vector<WORD>               g_bounceKeys = { VK_LSHIFT, VK_LWIN, 'D' 
 static XrPosef           g_anchor = IdentityPose();
 static bool              g_anchorValid = false;
 static std::atomic<bool> g_enabled{true};        // re-base on/off (Ctrl+Shift+B)
-static bool              g_isAC = false;         // host process is Assetto Corsa? gates ALL behavior
+static bool              g_active = false;       // host is an enabled game? gates the anchoring hooks
+static bool              g_isAC = false;         // host is Assetto Corsa specifically? gates the auto-bounce
 static std::atomic<bool> g_calibrateReq{false};
 static std::atomic<int>  g_saveResult{0};        // render thread -> hotkey thread: 1 ok, 2 fail
 static std::atomic<bool> g_hotkeyStarted{false};
@@ -392,7 +418,7 @@ static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrPollEvent(XrInstance instance, XrE
         case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
             auto* e = reinterpret_cast<const XrEventDataSessionStateChanged*>(ev);
             Log("[evt] SessionState -> %s", SessionStateName(e->state));
-            if (BOUNCE_ENABLED && e->state == XR_SESSION_STATE_FOCUSED) {
+            if (BOUNCE_ENABLED && g_isAC && e->state == XR_SESSION_STATE_FOCUSED) {
                 g_bounceArmGen.store(g_createCount);   // arm the auto-bounce against the current (final) session
                 g_bounceArmTick.store(GetTickCount64());
             }
@@ -472,7 +498,7 @@ static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrDestroyInstance(XrInstance instanc
 static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrGetInstanceProcAddr(
         XrInstance instance, const char* name, PFN_xrVoidFunction* function) {
     if (!name || !function) return XR_ERROR_VALIDATION_FAILURE;
-    if (!g_isAC)   // not Assetto Corsa -> install no hooks, stay completely out of the way
+    if (!g_active)   // host isn't an enabled game -> install no hooks, stay completely out of the way
         return g_nextGIPA ? g_nextGIPA(instance, name, function) : XR_ERROR_FUNCTION_UNSUPPORTED;
     auto bind = [&](PFN_xrVoidFunction f){ *function = f; return XR_SUCCESS; };
     if (!strcmp(name, "xrGetInstanceProcAddr"))   return bind(reinterpret_cast<PFN_xrVoidFunction>(Layer_xrGetInstanceProcAddr));
@@ -490,7 +516,9 @@ static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrGetInstanceProcAddr(
     return g_nextGIPA(instance, name, function);
 }
 
-// Is the host process Assetto Corsa? Belt-and-suspenders so the layer never touches other VR apps.
+// Is the host process Assetto Corsa specifically? This gates ONLY the auto-bounce (the launch black
+// screen is an AC/OpenComposite quirk; native-OpenXR games don't have it). NOT the FORCE override —
+// FORCE turns on anchoring for a non-standard host, but must not fire the VD bounce in unrelated apps.
 static bool HostIsAssettoCorsa(const char* appName) {
     if (appName) {                                   // OpenXR app name (AC via OpenComposite = "OpenComposite_acs")
         std::string a(appName);
@@ -504,8 +532,42 @@ static bool HostIsAssettoCorsa(const char* appName) {
         for (auto& c : w) if (c >= L'A' && c <= L'Z') c += 32;
         if (w.find(L"acs.exe") != std::wstring::npos) return true;
     }
-    char buf[8];                                      // ...or an explicit override for non-standard setups
-    return GetEnvironmentVariableA("XR_APILAYER_COCKPITANCHOR_FORCE", buf, sizeof(buf)) > 0;
+    return false;
+}
+
+// Host exe basename, lowercase (e.g. "acs.exe", "iracingsim64dx11.exe"). Empty on failure.
+static std::string HostExeBasename() {
+    wchar_t path[MAX_PATH];
+    DWORD n = GetModuleFileNameW(nullptr, path, MAX_PATH);
+    if (n == 0 || n >= MAX_PATH) return "";
+    std::wstring w(path);
+    size_t slash = w.find_last_of(L"\\/");
+    std::wstring base = (slash == std::wstring::npos) ? w : w.substr(slash + 1);
+    std::string s;
+    for (wchar_t c : base) if (c < 128) s += (char)((c >= L'A' && c <= L'Z') ? c + 32 : c);
+    return s;
+}
+
+// Is the host exe enabled? Reads enabled-games.txt (one lowercase basename per line, written by the
+// app). Absent file -> default to acs.exe only (back-compat). Present but host not listed -> false
+// (an empty file means the master switch is off, so nothing is enabled).
+static bool HostGameEnabled(const std::string& hostExe) {
+    std::ifstream f((DataDir() + L"\\enabled-games.txt").c_str());
+    if (!f) return hostExe == "acs.exe";
+    std::string line;
+    while (std::getline(f, line)) {
+        size_t a = line.find_first_not_of(" \t\r\n");            // trim the ENDS only — keep interior
+        if (a == std::string::npos) continue;                   // (so "le mans ultimate.exe" still matches)
+        size_t b = line.find_last_not_of(" \t\r\n");
+        std::string t;                                          // normalize like HostExeBasename: drop
+        for (size_t i = a; i <= b; ++i) {                       // non-ASCII (incl. a stray UTF-8 BOM),
+            unsigned char c = (unsigned char)line[i];           // lowercase A-Z, keep interior spaces
+            if (c >= 128) continue;
+            t += (c >= 'A' && c <= 'Z') ? (char)(c + 32) : (char)c;
+        }
+        if (!t.empty() && t == hostExe) return true;
+    }
+    return false;
 }
 
 // --------------------------------------------------- xrCreateApiLayerInstance
@@ -522,11 +584,18 @@ static XRAPI_ATTR XrResult XRAPI_CALL Layer_xrCreateApiLayerInstance(
 
     const char* app = (info && info->applicationInfo.applicationName[0])
                       ? info->applicationInfo.applicationName : "(unknown)";
-    g_isAC = HostIsAssettoCorsa(app);
-    Log("================ CockpitAnchor layer loaded — app='%s'  (Assetto Corsa: %s) ================",
-        app, g_isAC ? "yes" : "NO -> inert passthrough");
+    std::string hostExe = HostExeBasename();                 // e.g. "acs.exe", "iracingsim64dx11.exe"
+    g_hostStem = hostExe;
+    size_t dot = g_hostStem.rfind(".exe");
+    if (dot != std::string::npos && dot == g_hostStem.size() - 4) g_hostStem.resize(dot);
+    char fbuf[8];
+    bool forced = GetEnvironmentVariableA("XR_APILAYER_COCKPITANCHOR_FORCE", fbuf, sizeof(fbuf)) > 0;
+    g_isAC   = HostIsAssettoCorsa(app);                      // AC (or forced) -> arms the auto-bounce only
+    g_active = HostGameEnabled(hostExe) || forced;           // any enabled game -> install the anchor hooks
+    Log("================ CockpitAnchor layer loaded — app='%s' host='%s'  (enabled: %s, AC/bounce: %s) ================",
+        app, hostExe.c_str(), g_active ? "yes" : "NO -> inert passthrough", g_isAC ? "yes" : "no");
 
-    if (!g_isAC) return nextCreate(info, &newInfo, instance);  // not AC: chain only, install nothing
+    if (!g_active) return nextCreate(info, &newInfo, instance);  // not an enabled game: chain only
 
     if (LoadAnchor(g_anchor)) {
         g_anchorValid = true;
