@@ -52,10 +52,21 @@ function createTray() {
   } catch (e) { console.error('tray init failed:', e.message); }
 }
 
-// Extract the game's own icon from its .exe (needs the stored full path). Returns a data URL or null.
+// Some games launch via an exe with no usable icon. Assetto Corsa is run as acs.exe (by Content
+// Manager), whose icon is blank — but the install ships the real AC logo as a PNG. For those, prefer
+// the game's own logo file (resolved relative to the located exe) over the extracted exe icon.
+const ICON_FILE_FOR = { 'acs.exe': path.join('content', 'gui', 'default_icon.png') };
+
+// The game's icon as a data URL: its bundled logo file if we know one, else the .exe's own icon. null
+// if neither is available (needs the stored full path).
 async function gameIcon(g) {
   try {
     if (g.path && fs.existsSync(g.path)) {
+      const rel = ICON_FILE_FOR[g.exe.toLowerCase()];
+      if (rel) {
+        const png = path.join(path.dirname(g.path), rel);
+        try { if (fs.existsSync(png)) return 'data:image/png;base64,' + fs.readFileSync(png).toString('base64'); } catch { /* fall through to exe icon */ }
+      }
       const img = await app.getFileIcon(g.path, { size: 'large' });
       if (img && !img.isEmpty()) return img.toDataURL();
     }
