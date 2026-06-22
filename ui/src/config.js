@@ -22,6 +22,10 @@ const KNOWN_GAMES = [
   { name: 'Le Mans Ultimate', exe: 'Le Mans Ultimate.exe' },
 ];
 
+// Which KNOWN_GAMES to surface as one-click "quick add" chips. Only iRacing for now (Assetto Corsa is
+// added by default); widen this list as more sims are tested. Compared case-insensitively.
+const QUICK_ADD = ['iracingsim64dx11.exe'];
+
 function ensureDir() { fs.mkdirSync(DATA_DIR, { recursive: true }); }
 
 function defaultState() {
@@ -153,4 +157,4 @@ function syncBounceKey() {
   return vks;
 }
 
-module.exports = { DATA_DIR, LOG, KNOWN_GAMES, load, save, isCalibrated, clearAnchor, isLayerInstalled, resolveVdBounceKey, syncBounceKey, VD_BINDINGS };
+module.exports = { DATA_DIR, LOG, KNOWN_GAMES, QUICK_ADD, load, save, isCalibrated, clearAnchor, isLayerInstalled, resolveVdBounceKey, syncBounceKey, VD_BINDINGS };

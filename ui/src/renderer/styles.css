@@ -162,15 +162,6 @@ main::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 6px;
 
 /* quick add */
 .known { margin: 14px 2px 2px; }
-.known.locked { position: relative; }
-.known.locked .chips { filter: blur(3.5px); opacity: .4; pointer-events: none; }
-.soon-overlay { position: absolute; left: 0; right: 0; top: 22px; bottom: 0; display: flex; align-items: center; justify-content: center; }
-.btn.soon {
-  background: rgba(34, 211, 238, .1); border: 1px solid var(--cyan-soft); color: var(--cyan);
-  padding: 8px 20px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
-}
-.btn.soon:hover { background: rgba(34, 211, 238, .18); box-shadow: var(--glow-cyan); color: #cffafe; }
-.btn.soon:active { transform: scale(.94); }
 .known-label { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: 1.2px; }
 .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
 .g-icon img.g-img { width: 30px; height: 30px; border-radius: 6px; object-fit: contain; }

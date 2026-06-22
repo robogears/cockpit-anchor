@@ -7,41 +7,6 @@ function esc(s) {
   return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
-// A synthesized "sad trombone" (wah-wah-waaah) — the universal sound of "not yet!". No audio asset needed.
-function playFunnySound() {
-  try {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    const ctx = new Ctx();
-    const t0 = ctx.currentTime + 0.02;
-    const notes = [233.08, 220.00, 207.65]; // Bb3, A3, Ab3 — descending
-    const step = 0.24;
-    notes.forEach((f, i) => {
-      const t = t0 + i * step;
-      const last = i === notes.length - 1;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass'; lp.frequency.value = 1100;       // muffled, trombone-ish
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(f, t);
-      const len = last ? 0.6 : step * 0.9;
-      if (last) {
-        osc.frequency.exponentialRampToValueAtTime(f * 0.85, t + 0.55); // the "waaah" bend down
-        const lfo = ctx.createOscillator(); const lfoGain = ctx.createGain();
-        lfo.type = 'sine'; lfo.frequency.value = 6.5; lfoGain.gain.value = 6; // wobble/vibrato
-        lfo.connect(lfoGain).connect(osc.frequency);
-        lfo.start(t); lfo.stop(t + len);
-      }
-      gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.25, t + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + len);
-      osc.connect(lp).connect(gain).connect(ctx.destination);
-      osc.start(t); osc.stop(t + len + 0.05);
-    });
-    setTimeout(() => ctx.close().catch(() => {}), 1700);
-  } catch {}
-}
-
 // Representative state used only when there's no Electron bridge (i.e. a plain-browser preview),
 // so the panel renders fully populated for design review. In the real app, api.getState() always wins.
 const DEMO_STATE = {
@@ -49,14 +14,10 @@ const DEMO_STATE = {
   masterEnabled: true,
   games: [
     { name: 'Assetto Corsa', exe: 'acs.exe', enabled: true, calibrated: true },
-    { name: 'iRacing', exe: 'iRacingSim64DX11.exe', enabled: true, calibrated: false },
     { name: 'Automobilista 2', exe: 'AMS2AVX.exe', enabled: false, calibrated: false },
   ],
   known: [
-    { name: 'Assetto Corsa Competizione', exe: 'acc.exe' },
-    { name: 'DiRT Rally 2.0', exe: 'dirtrally2.exe' },
-    { name: 'rFactor 2', exe: 'rFactor2.exe' },
-    { name: 'RaceRoom', exe: 'RRRE64.exe' },
+    { name: 'iRacing', exe: 'iRacingSim64DX11.exe' },
   ],
 };
 
@@ -200,8 +161,5 @@ if (api) {
     setTimeout(() => { b.disabled = false; b.textContent = orig; }, 2500);
   };
 }
-
-const comingSoonBtn = $('#comingSoon');
-if (comingSoonBtn) comingSoonBtn.onclick = () => playFunnySound();
 
 refresh().then(() => { surfaceReady = true; if (pendingUpdate) { showUpdateNotice(pendingUpdate); pendingUpdate = null; } });

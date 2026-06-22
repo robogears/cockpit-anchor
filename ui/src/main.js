@@ -73,7 +73,7 @@ async function fullState() {
     masterEnabled: s.masterEnabled,
     installed: cfg.isLayerInstalled(),
     dataDir: cfg.DATA_DIR,
-    known: cfg.KNOWN_GAMES,
+    known: cfg.KNOWN_GAMES.filter((g) => cfg.QUICK_ADD.includes(g.exe.toLowerCase())),
     games,
   };
 }
