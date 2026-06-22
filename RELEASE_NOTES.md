@@ -1,16 +1,11 @@
-# What's new in v0.2.9
+# What's new in v0.2.10
 
-**Multi-game support + a shared seat across games, plus real game icons.**
+**Fixes the game icons not showing.** They were resolving correctly but the control panel's
+content-security-policy was blocking the `data:` image they're delivered as, so you'd see a
+broken-image placeholder. Now Assetto Corsa, iRacing, and any located game show their real icon
+next to the name.
 
-- **One seat for every game (default).** Calibrate once and every enabled game loads the same physical
-  seat — no more setting an anchor per game. The layer now activates for any game you've enabled, not
-  just Assetto Corsa.
-- **New toggle — "Shared seat across games."** On by default. Turn it **off** to keep a separate seat
-  per game instead.
-- **Game icons.** The control panel now finds each game's `.exe` (Steam library / common locations) and
-  shows its real icon next to the name.
-- The **auto-fix bounce stays Assetto-Corsa-only** — it's the game with the launch black screen; other
-  games (e.g. iRacing, native OpenXR) get anchoring without the unnecessary VR flip.
+No other changes from v0.2.9.
 
 > ⚠️ **Beta, and built by AI** — see the [README](https://github.com/robogears/cockpit-anchor#readme).
 
@@ -27,4 +22,4 @@ Download **`CockpitAnchor-Setup.exe`** and run it *(SmartScreen → More info �
 
 ---
 
-**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.8...v0.2.9
+**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.9...v0.2.10
