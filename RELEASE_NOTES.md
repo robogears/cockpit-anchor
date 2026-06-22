@@ -1,13 +1,17 @@
-# What's new in v0.2.7
+# What's new in v0.2.8
 
-**Window buttons now behave like a proper tray app:**
+**Makes the layer registration durable, so the anchoring + auto-fix can't silently stop working.**
 
-- **Minimize (–)** → drops to the **system tray** (out of the taskbar). Click the tray icon to bring it back.
-- **Exit (✕)** → **quits the control panel entirely.**
+- The OpenXR layer manifest is now written to a **stable location** (`%LOCALAPPDATA%\CockpitAnchor`)
+  that survives app updates, instead of inside the app folder (which every in-app update replaces).
+  It points at the app's bundled DLL, so the layer still **auto-upgrades** with each update.
+- The control panel now **honestly detects** the layer: it only shows "active" when the registered
+  manifest and its DLL actually exist. If a registration ever goes stale, you'll see **Layer OFFLINE →
+  Install layer** instead of a false "active."
 
-This is safe because the anchoring + auto-fix run in the OpenXR **layer**, which is installed
-system-wide and loads inside Assetto Corsa whether or not the control panel is open. So you can quit
-the app and everything still works — reopen it only when you want to change settings or check status.
+*Background:* a stale registration — e.g. from the old layer-only zip run straight out of a temporary
+folder — could point at files Windows later deleted, leaving the layer unable to load. This release
+prevents that and makes it visible if it ever happens.
 
 > ⚠️ **Beta, and built by AI** — see the [README](https://github.com/robogears/cockpit-anchor#readme).
 
@@ -24,4 +28,4 @@ Download **`CockpitAnchor-Setup.exe`** and run it *(SmartScreen → More info �
 
 ---
 
-**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.6...v0.2.7
+**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.7...v0.2.8
