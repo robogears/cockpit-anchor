@@ -1,10 +1,10 @@
-# What's new in v0.2.12
+# What's new in v0.2.13
 
-**Adds F1 25 to the quick-add list.** One click to add it (the finder locates it in your Steam install
-and shows its icon). As with any game, the layer will anchor it only if its VR reaches VDXR through
-OpenXR — natively, or via OpenComposite if F1 25 is OpenVR-based.
+Removes **F1 25** from the quick-add list. (F1 25 needs OpenComposite *and* ships EA AntiCheat, which
+makes the OpenVR drop-in risky — not worth it.) iRacing remains the one quick-add sim; Assetto Corsa
+is added by default. You can still add any game manually with **+ Add game**.
 
-No other changes from v0.2.11.
+No other changes from v0.2.12.
 
 > ⚠️ **Beta, and built by AI** — see the [README](https://github.com/robogears/cockpit-anchor#readme).
 
@@ -21,4 +21,4 @@ Download **`CockpitAnchor-Setup.exe`** and run it *(SmartScreen → More info �
 
 ---
 
-**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.11...v0.2.12
+**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.12...v0.2.13
