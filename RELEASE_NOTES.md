@@ -1,11 +1,10 @@
-# What's new in v0.2.11
+# What's new in v0.2.12
 
-**Assetto Corsa now shows its real logo.** Content Manager launches `acs.exe`, which has only a blank
-Windows icon — so AC was showing a generic placeholder. The app now uses Assetto Corsa's own logo
-(`content\gui\default_icon.png` from your install) for its tile, falling back to the exe icon if that
-file isn't there.
+**Adds F1 25 to the quick-add list.** One click to add it (the finder locates it in your Steam install
+and shows its icon). As with any game, the layer will anchor it only if its VR reaches VDXR through
+OpenXR — natively, or via OpenComposite if F1 25 is OpenVR-based.
 
-No other changes from v0.2.10.
+No other changes from v0.2.11.
 
 > ⚠️ **Beta, and built by AI** — see the [README](https://github.com/robogears/cockpit-anchor#readme).
 
@@ -22,4 +21,4 @@ Download **`CockpitAnchor-Setup.exe`** and run it *(SmartScreen → More info �
 
 ---
 
-**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.10...v0.2.11
+**Full Changelog**: https://github.com/robogears/cockpit-anchor/compare/v0.2.11...v0.2.12
