@@ -19,6 +19,7 @@ const DEMO_STATE = {
   ],
   known: [
     { name: 'iRacing', exe: 'iRacingSim64DX11.exe' },
+    { name: 'F1 25', exe: 'F1_25.exe' },
   ],
 };
 

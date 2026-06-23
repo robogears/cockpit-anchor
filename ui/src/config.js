@@ -18,15 +18,16 @@ const KNOWN_GAMES = [
   { name: 'Assetto Corsa Competizione', exe: 'acc.exe' },
   { name: 'DiRT Rally 2.0', exe: 'dirtrally2.exe' },
   { name: 'iRacing', exe: 'iRacingSim64DX11.exe' },
+  { name: 'F1 25', exe: 'F1_25.exe' },
   { name: 'Automobilista 2', exe: 'AMS2AVX.exe' },
   { name: 'rFactor 2', exe: 'rFactor2.exe' },
   { name: 'RaceRoom', exe: 'RRRE64.exe' },
   { name: 'Le Mans Ultimate', exe: 'Le Mans Ultimate.exe' },
 ];
 
-// Which KNOWN_GAMES to surface as one-click "quick add" chips. Only iRacing for now (Assetto Corsa is
-// added by default); widen this list as more sims are tested. Compared case-insensitively.
-const QUICK_ADD = ['iracingsim64dx11.exe'];
+// Which KNOWN_GAMES to surface as one-click "quick add" chips (Assetto Corsa is added by default).
+// Widen as more sims are tested. Compared case-insensitively.
+const QUICK_ADD = ['iracingsim64dx11.exe', 'f1_25.exe'];
 
 function ensureDir() { fs.mkdirSync(DATA_DIR, { recursive: true }); }
 
